@@ -3,48 +3,67 @@ let currentNoteId = null;
 let autoSaveTimeout = null;
 let lastSavedContent = '';
 
-// Initialize on page load
 function init() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const idFromUrl = urlParams.get('id');
+    // Extract note ID from URL path (e.g., /01KDECFWYDMS857DZMCR680MCY)
+    const pathname = window.location.pathname;
+    const pathParts = pathname.split('/');
+    let idFromUrl = null;
+
+    // Look for a 26-character alphanumeric string (ULID pattern)
+    for (const part of pathParts) {
+        if (part && /^[A-Za-z0-9]{26}$/.test(part)) {
+            idFromUrl = part;
+            break;
+        }
+    }
 
     if (idFromUrl) {
         loadNoteById(idFromUrl);
     } else {
-        // Create a new note immediately if no ID in URL
         newNote();
     }
 
     // Set up auto-save on content change
     const noteContent = document.getElementById('noteContent');
-    noteContent.addEventListener('input', handleContentChange);
+    if (noteContent) {
+        noteContent.addEventListener('input', handleContentChange);
+    } else {
+        console.error('Element with ID "noteContent" not found');
+    }
 
     // Handle Enter key in ID input
-    document.getElementById('noteIdInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            loadNoteFromInput();
-        }
-    });
+    const noteIdInput = document.getElementById('noteIdInput');
+    if (noteIdInput) {
+        noteIdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadNoteFromInput();
+            }
+        });
+    } else {
+        console.error('Element with ID "noteIdInput" not found');
+    }
 }
 
 // Handle content change for auto-save
 function handleContentChange() {
-    const content = document.getElementById('noteContent').value;
+    const noteContent = document.getElementById('noteContent');
+    if (!noteContent) {
+        console.error('Element with ID "noteContent" not found in handleContentChange');
+        return;
+    }
+    const content = noteContent.value;
 
     // Clear existing timeout
     if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
     }
 
-    // Use 3-second debounce for all saves
     autoSaveTimeout = setTimeout(() => {
         autoSave(content);
-    }, 3000);
+    }, 1000);
 }
 
-// Auto-save function
 async function autoSave(content) {
-    // Don't save if content hasn't changed
     if (content === lastSavedContent) {
         return;
     }
@@ -78,10 +97,9 @@ async function autoSave(content) {
                 const note = await response.json();
                 currentNoteId = note.id;
 
-                // Update URL with new note ID
-                const url = new URL(window.location);
-                url.searchParams.set('id', note.id);
-                window.history.replaceState({}, '', url);
+                // Update URL with new note ID (path-based)
+                const newUrl = `/${note.id}`;
+                window.history.replaceState({}, '', newUrl);
 
                 // Show note ID in header
                 showNoteId(note.id);
@@ -90,12 +108,10 @@ async function autoSave(content) {
 
         lastSavedContent = content;
     } catch (error) {
-        // Silently fail - no user feedback needed as per requirements
         console.error('Auto-save failed:', error);
     }
 }
 
-// Load note by ID
 async function loadNoteById(id) {
     try {
         const response = await fetch(`${API_BASE}/${id}`);
@@ -105,38 +121,52 @@ async function loadNoteById(id) {
             currentNoteId = note.id;
 
             // Update content
-            document.getElementById('noteContent').value = note.content;
-            lastSavedContent = note.content;
+            const noteContent = document.getElementById('noteContent');
+            if (noteContent) {
+                noteContent.value = note.content;
+                lastSavedContent = note.content;
+            } else {
+                console.error('Element with ID "noteContent" not found in loadNoteById');
+            }
 
-            // Update URL
-            const url = new URL(window.location);
-            url.searchParams.set('id', note.id);
-            window.history.replaceState({}, '', url);
+            // Update URL (path-based)
+            const newUrl = `/${note.id}`;
+            window.history.replaceState({}, '', newUrl);
 
             // Show note ID in header
             showNoteId(note.id);
+        } else {
+            // Note not found (404) or other error - create a new note instead
+            console.warn(`Note with ID ${id} not found (${response.status}), creating new note`);
+            await newNote();
         }
     } catch (error) {
-        // Silently fail - no user feedback
-        console.error('Failed to load note:', error);
+        // Network error or other failure - create a new note instead
+        console.error('Failed to load note:', error, 'creating new note instead');
+        await newNote();
     }
 }
 
-// Show note ID in header
 function showNoteId(id) {
     const noteIdDisplay = document.getElementById('noteIdDisplay');
-    noteIdDisplay.textContent = id;
-    noteIdDisplay.style.display = 'inline-block';
+    if (noteIdDisplay) {
+        noteIdDisplay.textContent = id;
+        noteIdDisplay.style.display = 'inline-block';
+    } else {
+        console.error('Element with ID "noteIdDisplay" not found in showNoteId');
+    }
 }
 
-// Hide note ID in header
 function hideNoteId() {
-    document.getElementById('noteIdDisplay').style.display = 'none';
+    const noteIdDisplay = document.getElementById('noteIdDisplay');
+    if (noteIdDisplay) {
+        noteIdDisplay.style.display = 'none';
+    } else {
+        console.error('Element with ID "noteIdDisplay" not found in hideNoteId');
+    }
 }
 
-// Create new note
 async function newNote() {
-    // Create empty note immediately to get an ID
     try {
         const response = await fetch(API_BASE, {
             method: 'POST',
@@ -153,45 +183,73 @@ async function newNote() {
             currentNoteId = note.id;
             lastSavedContent = '';
 
-            // Clear content
-            document.getElementById('noteContent').value = '';
+            // Clear content and focus on content area
+            const noteContent = document.getElementById('noteContent');
+            if (noteContent) {
+                noteContent.value = '';
+                noteContent.focus();
+            } else {
+                console.error('Element with ID "noteContent" not found in newNote');
+            }
 
-            // Update URL with new note ID
-            const url = new URL(window.location);
-            url.searchParams.set('id', note.id);
-            window.history.replaceState({}, '', url);
+            // Update URL with new note ID (path-based)
+            const newUrl = `/${note.id}`;
+            window.history.replaceState({}, '', newUrl);
 
             // Show note ID in header
             showNoteId(note.id);
-
-            // Focus on content area
-            document.getElementById('noteContent').focus();
         }
     } catch (error) {
         console.error('Failed to create new note:', error);
     }
 }
 
-// Show ID input overlay
 function showIdInput() {
-    document.getElementById('idInputOverlay').classList.remove('hidden');
-    document.getElementById('noteIdInput').focus();
+    const idInputOverlay = document.getElementById('idInputOverlay');
+    const noteIdInput = document.getElementById('noteIdInput');
+
+    if (idInputOverlay) {
+        idInputOverlay.classList.remove('hidden');
+    } else {
+        console.error('Element with ID "idInputOverlay" not found in showIdInput');
+    }
+
+    if (noteIdInput) {
+        noteIdInput.focus();
+    } else {
+        console.error('Element with ID "noteIdInput" not found in showIdInput');
+    }
 }
 
-// Hide ID input overlay
 function hideIdInput() {
-    document.getElementById('idInputOverlay').classList.add('hidden');
-    document.getElementById('noteIdInput').value = '';
+    const idInputOverlay = document.getElementById('idInputOverlay');
+    const noteIdInput = document.getElementById('noteIdInput');
+
+    if (idInputOverlay) {
+        idInputOverlay.classList.add('hidden');
+    } else {
+        console.error('Element with ID "idInputOverlay" not found in hideIdInput');
+    }
+
+    if (noteIdInput) {
+        noteIdInput.value = '';
+    } else {
+        console.error('Element with ID "noteIdInput" not found in hideIdInput');
+    }
 }
 
-// Load note from input
 function loadNoteFromInput() {
-    const id = document.getElementById('noteIdInput').value.trim();
+    const noteIdInput = document.getElementById('noteIdInput');
+    if (!noteIdInput) {
+        console.error('Element with ID "noteIdInput" not found in loadNoteFromInput');
+        return;
+    }
+
+    const id = noteIdInput.value.trim();
     if (id) {
         hideIdInput();
         loadNoteById(id);
     }
 }
 
-// Initialize when page loads
 window.addEventListener('load', init);
