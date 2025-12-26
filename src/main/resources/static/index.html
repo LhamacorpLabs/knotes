@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kNotes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <div class="title">KNotes</div>
+        <div class="header-right">
+            <span class="note-id" id="noteIdDisplay" style="display: none;"></span>
+            <button class="new-btn" onclick="showIdInput()">Open</button>
+            <button class="new-btn" onclick="newNote()">New</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <textarea class="note-area" id="noteContent" placeholder="Start typing your note..."></textarea>
+    </div>
+
+    <div id="idInputOverlay" class="id-input-overlay hidden">
+        <div class="id-input-dialog">
+            <h3>Open Note</h3>
+            <input type="text" id="noteIdInput" class="id-input" placeholder="Enter note ID" />
+            <div class="dialog-buttons">
+                <button class="dialog-btn secondary" onclick="hideIdInput()">Cancel</button>
+                <button class="dialog-btn primary" onclick="loadNoteFromInput()">Open</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

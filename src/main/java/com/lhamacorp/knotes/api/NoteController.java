@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/notes")
+@CrossOrigin(origins = "*")
 public class NoteController {
 
     private final NoteService service;

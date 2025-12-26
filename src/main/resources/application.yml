@@ -4,4 +4,4 @@ server:
 spring:
   mongodb:
     database: ${database:knotes}
-    uri: ${mongo:}
+    uri: ${mongo:mongodb://localhost:27017}
