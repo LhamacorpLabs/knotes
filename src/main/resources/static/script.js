@@ -3,7 +3,57 @@ let currentNoteId = null;
 let autoSaveTimeout = null;
 let lastSavedContent = '';
 
+// Theme management
+function initializeTheme() {
+    // Get saved theme preference or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const body = document.body;
+    const themeSwitch = document.getElementById('themeSwitch');
+
+    if (!themeSwitch) {
+        console.error('Theme switch element not found');
+        return;
+    }
+
+    // Apply the theme
+    if (savedTheme === 'dark') {
+        body.setAttribute('data-theme', 'dark');
+        themeSwitch.classList.add('dark');
+    } else {
+        body.removeAttribute('data-theme');
+        themeSwitch.classList.remove('dark');
+    }
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const themeSwitch = document.getElementById('themeSwitch');
+
+    if (!themeSwitch) {
+        console.error('Theme switch element not found');
+        return;
+    }
+
+    // Toggle between light and dark themes
+    const currentTheme = body.getAttribute('data-theme');
+
+    if (currentTheme === 'dark') {
+        // Switch to light theme
+        body.removeAttribute('data-theme');
+        themeSwitch.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        // Switch to dark theme
+        body.setAttribute('data-theme', 'dark');
+        themeSwitch.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
 function init() {
+    // Initialize theme first
+    initializeTheme();
+
     // Extract note ID from URL path (e.g., /01KDECFWYDMS857DZMCR680MCY)
     const pathname = window.location.pathname;
     const pathParts = pathname.split('/');
