@@ -20,8 +20,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
 
     implementation 'com.github.f4b6a3:ulid-creator:5.2.3'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-mongodb-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

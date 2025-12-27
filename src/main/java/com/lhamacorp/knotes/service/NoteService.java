@@ -8,6 +8,8 @@ import com.lhamacorp.knotes.exception.NotFoundException;
 import com.lhamacorp.knotes.repository.NoteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -31,28 +33,38 @@ public class NoteService {
         return repository.existsById(id);
     }
 
+    @Cacheable(value = "note", key = "#id")
     public Note findById(String id) {
+        log.debug("Cache miss - fetching and decompressing note [{}]", id);
         return repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
     }
 
+    @Cacheable(value = "metadata", key = "#id")
     public NoteMetadata findMetadataById(String id) {
+        log.debug("Cache miss - fetching metadata for note [{}]", id);
         Note noteProjection = repository.findMetadataProjectionById(id)
                 .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
         return NoteMetadata.from(noteProjection);
     }
 
+    @CacheEvict(value = {"note", "metadata"}, key = "#result.id")
     public Note save(String content) {
         Ulid id = UlidCreator.getUlid();
 
         log.info("Saving new note [{}]", id);
 
         Instant now = Instant.now();
-        return repository.save(new Note(id.toString(), content, now, now));
+        Note savedNote = repository.save(new Note(id.toString(), content, now, now));
+
+        log.debug("Evicting caches for new note [{}]", savedNote.id());
+        return savedNote;
     }
 
+    @CacheEvict(value = {"note", "metadata"}, key = "#id")
     public Note update(String id, String content) {
-        Note note = findById(id);
+        Note note = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
 
         log.info("Updating note [{}]", id);
 
@@ -62,9 +74,8 @@ public class NoteService {
 
     @Scheduled(cron = ONCE_PER_DAY_AT_2AM)
     public void cleanup() {
-        List<Note> allNotes = repository.findAll();
-        List<String> ids = allNotes.stream()
-                .filter(this::isContentEmpty)
+        List<Note> emptyNotes = repository.findEmptyNotes();
+        List<String> ids = emptyNotes.stream()
                 .map(Note::id)
                 .toList();
 
@@ -72,11 +83,6 @@ public class NoteService {
             log.info("Cleaning empty notes [{}]", ids);
             repository.deleteAllById(ids);
         }
-    }
-
-    private boolean isContentEmpty(Note note) {
-        String content = note.content();
-        return content == null || content.trim().isEmpty();
     }
 
 }
