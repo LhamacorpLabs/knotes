@@ -14,7 +14,7 @@
 </head>
 <body>
 <div class="header">
-    <div class="title"><img src="logo.png" alt="kNotes logo"/> kNotes</div>
+    <div class="title" onclick="window.location.href='/'" style="cursor: pointer;"><img src="logo.png" alt="kNotes logo"/> kNotes</div>
     <div class="header-right">
         <div class="theme-switch" id="themeSwitch" onclick="toggleTheme()" title="Toggle dark/light theme"></div>
         <button class="new-btn" onclick="window.location.href='/'">Home</button>
@@ -29,25 +29,6 @@
             The page you're looking for doesn't exist. It might have been moved, deleted,
             or you entered the wrong URL.
         </p>
-        <div class="error-actions">
-            <button class="dialog-btn primary" onclick="window.location.href='/'">
-                Create New Note
-            </button>
-            <button class="dialog-btn secondary" onclick="showIdInput()">
-                Open Existing Note
-            </button>
-        </div>
-    </div>
-</div>
-
-<div id="idInputOverlay" class="id-input-overlay hidden">
-    <div class="id-input-dialog">
-        <h3>Open Note</h3>
-        <input type="text" id="noteIdInput" class="id-input" placeholder="Enter note ID"/>
-        <div class="dialog-buttons">
-            <button class="dialog-btn secondary" onclick="hideIdInput()">Cancel</button>
-            <button class="dialog-btn primary" onclick="loadNoteFromInput()">Open</button>
-        </div>
     </div>
 </div>
 
@@ -101,19 +82,6 @@
             } else {
                 themeColorMeta.setAttribute('content', '#007bff');
             }
-        }
-    }
-
-    function showIdInput() {
-        const idInputOverlay = document.getElementById('idInputOverlay');
-        const noteIdInput = document.getElementById('noteIdInput');
-
-        if (idInputOverlay) {
-            idInputOverlay.classList.remove('hidden');
-        }
-
-        if (noteIdInput) {
-            noteIdInput.focus();
         }
     }
 

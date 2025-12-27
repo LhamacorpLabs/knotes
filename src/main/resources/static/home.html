@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="kNotes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="kNotes">
+    <title>kNotes - Simple Note Taking</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="header">
+    <div class="title" onclick="window.location.href='/'" style="cursor: pointer;"><img src="logo.png"
+                                                                                        alt="kNotes logo"/> kNotes
+    </div>
+    <div class="header-right">
+        <div class="theme-switch" id="themeSwitch" onclick="toggleTheme()" title="Toggle dark/light theme"></div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="error-content">
+        <div class="error-icon">📝</div>
+        <h1 class="error-title">Welcome to kNotes</h1>
+        <div class="error-actions">
+            <button class="dialog-btn primary" onclick="createNewNote()">
+                Create New
+            </button>
+            <button class="dialog-btn secondary" onclick="showIdInput()">
+                Open Existing
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="idInputOverlay" class="id-input-overlay hidden">
+    <div class="id-input-dialog">
+        <h3>Open Note</h3>
+        <input type="text" id="noteIdInput" class="id-input" placeholder="Enter note ID"/>
+        <div class="dialog-buttons">
+            <button class="dialog-btn secondary" onclick="hideIdInput()">Cancel</button>
+            <button class="dialog-btn primary" onclick="loadNoteFromInput()">Open</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+    function createNewNote() {
+        window.location.href = '/index.html';
+    }
+
+    function hideIdInput() {
+        const idInputOverlay = document.getElementById('idInputOverlay');
+        const noteIdInput = document.getElementById('noteIdInput');
+
+        if (idInputOverlay) {
+            idInputOverlay.classList.add('hidden');
+        }
+
+        if (noteIdInput) {
+            noteIdInput.value = '';
+        }
+    }
+
+    function loadNoteFromInput() {
+        const noteIdInput = document.getElementById('noteIdInput');
+        if (!noteIdInput) return;
+
+        const id = noteIdInput.value.trim();
+        if (id) {
+            hideIdInput();
+            window.location.href = `/${id}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeTheme();
+
+        const noteIdInput = document.getElementById('noteIdInput');
+        if (noteIdInput) {
+            noteIdInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    loadNoteFromInput();
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

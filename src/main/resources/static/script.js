@@ -73,14 +73,17 @@ function init() {
         }
     }
 
-    if (idFromUrl) {
-        loadNoteById(idFromUrl);
-    } else {
-        newNote();
+    // Only load/create notes if we're on the note editor page (has noteContent element)
+    const noteContent = document.getElementById('noteContent');
+    if (noteContent) {
+        if (idFromUrl) {
+            loadNoteById(idFromUrl);
+        } else {
+            newNote();
+        }
     }
 
     // Set up auto-save on content change
-    const noteContent = document.getElementById('noteContent');
     if (noteContent) {
         noteContent.addEventListener('input', handleContentChange);
     } else {

@@ -15,6 +15,14 @@ public class WebController {
     }
 
     /**
+     * Serve the home page at root path
+     */
+    @GetMapping("/")
+    public String serveHomePage() {
+        return "forward:/home.html";
+    }
+
+    /**
      * Handle note ID paths by serving the index.html file
      * Matches any alphanumeric ID and forwards to 404 if not found
      */
