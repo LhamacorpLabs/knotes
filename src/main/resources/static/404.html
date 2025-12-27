@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="kNotes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="kNotes">
+    <title>Page Not Found - kNotes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="header">
+    <div class="title"><img src="logo.png" alt="kNotes logo"/> kNotes</div>
+    <div class="header-right">
+        <div class="theme-switch" id="themeSwitch" onclick="toggleTheme()" title="Toggle dark/light theme"></div>
+        <button class="new-btn" onclick="window.location.href='/'">Home</button>
+    </div>
+</div>
+
+<div class="content">
+    <div class="error-content">
+        <div class="error-icon">📄</div>
+        <h1 class="error-title">Page Not Found</h1>
+        <p class="error-message">
+            The page you're looking for doesn't exist. It might have been moved, deleted,
+            or you entered the wrong URL.
+        </p>
+        <div class="error-actions">
+            <button class="dialog-btn primary" onclick="window.location.href='/'">
+                Create New Note
+            </button>
+            <button class="dialog-btn secondary" onclick="showIdInput()">
+                Open Existing Note
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="idInputOverlay" class="id-input-overlay hidden">
+    <div class="id-input-dialog">
+        <h3>Open Note</h3>
+        <input type="text" id="noteIdInput" class="id-input" placeholder="Enter note ID"/>
+        <div class="dialog-buttons">
+            <button class="dialog-btn secondary" onclick="hideIdInput()">Cancel</button>
+            <button class="dialog-btn primary" onclick="loadNoteFromInput()">Open</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const body = document.body;
+        const themeSwitch = document.getElementById('themeSwitch');
+
+        if (!themeSwitch) return;
+
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeSwitch.classList.add('dark');
+        } else {
+            body.removeAttribute('data-theme');
+            themeSwitch.classList.remove('dark');
+        }
+
+        updateThemeColor();
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const themeSwitch = document.getElementById('themeSwitch');
+
+        if (!themeSwitch) return;
+
+        const currentTheme = body.getAttribute('data-theme');
+
+        if (currentTheme === 'dark') {
+            body.removeAttribute('data-theme');
+            themeSwitch.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            themeSwitch.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        }
+
+        updateThemeColor();
+    }
+
+    function updateThemeColor() {
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        const currentTheme = document.body.getAttribute('data-theme');
+
+        if (themeColorMeta) {
+            if (currentTheme === 'dark') {
+                themeColorMeta.setAttribute('content', '#2d2d2d');
+            } else {
+                themeColorMeta.setAttribute('content', '#007bff');
+            }
+        }
+    }
+
+    function showIdInput() {
+        const idInputOverlay = document.getElementById('idInputOverlay');
+        const noteIdInput = document.getElementById('noteIdInput');
+
+        if (idInputOverlay) {
+            idInputOverlay.classList.remove('hidden');
+        }
+
+        if (noteIdInput) {
+            noteIdInput.focus();
+        }
+    }
+
+    function hideIdInput() {
+        const idInputOverlay = document.getElementById('idInputOverlay');
+        const noteIdInput = document.getElementById('noteIdInput');
+
+        if (idInputOverlay) {
+            idInputOverlay.classList.add('hidden');
+        }
+
+        if (noteIdInput) {
+            noteIdInput.value = '';
+        }
+    }
+
+    function loadNoteFromInput() {
+        const noteIdInput = document.getElementById('noteIdInput');
+        if (!noteIdInput) return;
+
+        const id = noteIdInput.value.trim();
+        if (id) {
+            hideIdInput();
+            window.location.href = `/${id}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeTheme();
+
+        const noteIdInput = document.getElementById('noteIdInput');
+        if (noteIdInput) {
+            noteIdInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    loadNoteFromInput();
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
