@@ -7,19 +7,21 @@ import com.lhamacorp.knotes.domain.Note;
 import com.lhamacorp.knotes.exception.NotFoundException;
 import com.lhamacorp.knotes.repository.NoteRepository;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+import static java.time.Instant.now;
+import static org.slf4j.LoggerFactory.getLogger;
+
 @Service
 public class NoteService {
 
     private final NoteRepository repository;
 
-    private static final Logger log = LoggerFactory.getLogger(NoteService.class);
+    private static final Logger log = getLogger(NoteService.class);
 
     public NoteService(NoteRepository repository) {
         this.repository = repository;
@@ -46,13 +48,10 @@ public class NoteService {
     public Note save(String content) {
         Ulid id = UlidCreator.getUlid();
 
-        log.info("Saving new note [{}]", id);
+        log.info("Saving note [{}]", id);
 
-        Instant now = Instant.now();
-        Note savedNote = repository.save(new Note(id.toString(), content, now, now));
-
-        log.debug("Evicting caches for new note [{}]", savedNote.id());
-        return savedNote;
+        Instant now = now();
+        return repository.save(new Note(id.toString(), content, now, now));
     }
 
     @CacheEvict(value = {"contentCache", "metadataCache"}, key = "#id")
@@ -62,8 +61,7 @@ public class NoteService {
 
         log.info("Updating note [{}]", id);
 
-        Instant now = Instant.now();
-        return repository.save(new Note(id, content, note.createdAt(), now));
+        return repository.save(new Note(id, content, note.createdAt(), now()));
     }
 
 }
