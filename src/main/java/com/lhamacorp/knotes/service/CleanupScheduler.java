@@ -17,7 +17,7 @@ public class CleanupScheduler {
 
     private final NoteRepository repository;
 
-    private static final String ONCE_PER_DAY_AT_2AM = "* * * * * *";
+    private static final String ONCE_PER_DAY_AT_2AM = "0 0 2 * * *";
     private static final Logger log = getLogger(CleanupScheduler.class);
 
     public CleanupScheduler(NoteRepository repository) {
