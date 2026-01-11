@@ -22,6 +22,7 @@ public class NoteService {
     private final NoteRepository repository;
 
     private static final Logger log = getLogger(NoteService.class);
+    private static final String NOT_FOUND = "Note not found!";
 
     public NoteService(NoteRepository repository) {
         this.repository = repository;
@@ -33,14 +34,12 @@ public class NoteService {
 
     @Cacheable(value = "content", key = "#id")
     public Note findById(String id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
+        return repository.findById(id).orElseThrow(() -> new NotFoundException(NOT_FOUND));
     }
 
     @Cacheable(value = "metadata", key = "#id")
     public NoteMetadata findMetadataById(String id) {
-        Note noteProjection = repository.findMetadataProjectionById(id)
-                .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
+        Note noteProjection = repository.findMetadataById(id).orElseThrow(() -> new NotFoundException(NOT_FOUND));
         return NoteMetadata.from(noteProjection);
     }
 
@@ -56,8 +55,7 @@ public class NoteService {
 
     @CacheEvict(value = {"content", "metadata"}, key = "#id")
     public Note update(String id, String content) {
-        Note note = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
+        Note note = repository.findById(id).orElseThrow(() -> new NotFoundException(NOT_FOUND));
 
         log.debug("Updating note [{}]", id);
 
