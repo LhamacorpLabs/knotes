@@ -32,16 +32,16 @@ public class NoteController {
         return ResponseEntity.ok().body(metadata);
     }
 
+    @PutMapping("{id}")
+    public ResponseEntity<NoteResponse> update(@PathVariable String id, @RequestBody NoteUpdateRequest request) {
+        Note updatedNote = service.update(id, request.content());
+        return ResponseEntity.ok().body(NoteResponse.from(updatedNote));
+    }
+
     @PostMapping
     public ResponseEntity<NoteResponse> save(@RequestBody NoteRequest request) {
         Note savedNote = service.save(request.note());
         return ResponseEntity.ok().body(NoteResponse.from(savedNote));
-    }
-
-    @PutMapping
-    public ResponseEntity<NoteResponse> update(@RequestBody NoteUpdateRequest request) {
-        Note updatedNote = service.update(request.id(), request.content());
-        return ResponseEntity.ok().body(NoteResponse.from(updatedNote));
     }
 
 }

@@ -48,7 +48,7 @@ public class NoteService {
     public Note save(String content) {
         Ulid id = UlidCreator.getUlid();
 
-        log.info("Saving note [{}]", id);
+        log.debug("Saving note [{}]", id);
 
         Instant now = now();
         return repository.save(new Note(id.toString(), content, now, now));
@@ -59,7 +59,7 @@ public class NoteService {
         Note note = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Note with id " + id + " not found!"));
 
-        log.info("Updating note [{}]", id);
+        log.debug("Updating note [{}]", id);
 
         return repository.save(new Note(id, content, note.createdAt(), now()));
     }

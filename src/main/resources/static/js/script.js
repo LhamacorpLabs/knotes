@@ -197,13 +197,12 @@ async function autoSave(content) {
     try {
         if (currentNoteId) {
             // Update existing note
-            const response = await fetch(API_BASE, {
+            const response = await fetch(`${API_BASE}/${currentNoteId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    id: currentNoteId,
                     content: content
                 })
             });
