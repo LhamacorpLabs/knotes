@@ -5,7 +5,6 @@ async function loadComponent(componentPath, targetId, customizations = {}) {
 
         let html = await response.text();
 
-        // Apply customizations
         Object.entries(customizations).forEach(([placeholder, value]) => {
             html = html.replace(new RegExp(`{{${placeholder}}}`, 'g'), value);
         });
@@ -19,7 +18,6 @@ async function loadComponent(componentPath, targetId, customizations = {}) {
     }
 }
 
-// Page configurations
 const PAGE_CONFIGS = {
     editor: {
         header: `
@@ -48,7 +46,6 @@ const PAGE_CONFIGS = {
     }
 };
 
-// Initialize page components
 async function initPage(pageType) {
     const config = PAGE_CONFIGS[pageType];
     if (!config) {
@@ -56,21 +53,17 @@ async function initPage(pageType) {
         return;
     }
 
-    // Load header
     await loadComponent('/components/header.html', 'headerContainer', {
         HEADER_CONTENT: config.header
     });
 
-    // Load modal if needed
     if (config.needsModal) {
         await loadComponent('/components/modal.html', 'modalContainer');
     }
 
-    // Initialize theme
     if (typeof initializeTheme === 'function') {
         initializeTheme();
     }
 
-    // Ensure theme switch state is correct after components load
     updateThemeSwitchState();
 }
