@@ -85,11 +85,12 @@ The app acts as a desktop wrapper around your existing frontend, making HTTP req
 The desktop app includes automatic update functionality:
 
 ### How It Works
-1. **Frontend Changes Detected** - When you push changes to the main branch that affect `src/main/resources/static/`, GitHub Actions automatically builds new desktop app versions
-2. **GitHub Releases Created** - New versions are published to GitHub Releases with cross-platform binaries
-3. **Automatic Notifications** - Desktop app checks for updates every time it starts and notifies users when updates are available
-4. **Background Downloads** - Updates download automatically in the background
-5. **One-Click Installation** - Users can restart to apply updates with a single click
+1. **Any Changes Pushed** - When you push ANY changes to the main branch, GitHub Actions triggers a unified release workflow
+2. **Docker Deployment First** - Web application is built, tested, and deployed to https://notes.lhamacorp.com
+3. **Desktop Apps Follow** - After successful Docker deployment, desktop apps are built for all platforms using the latest frontend
+4. **Single GitHub Release** - One release contains both Docker deployment info AND all desktop app binaries
+5. **Auto-Update Notifications** - Desktop users get notified of new versions automatically
+6. **One-Click Installation** - Users can restart to apply updates with a single click
 
 ### Manual Update Check
 Users can also manually check for updates via: **File Menu → Check for Updates**

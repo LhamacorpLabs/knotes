@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build-and-test:
     name: Build and Test
@@ -42,3 +45,152 @@ jobs:
         run: |
           docker buildx create --use
           docker buildx build --platform linux/amd64,linux/arm64 -t lhamacorp/knotes:latest --push .
+
+  create-desktop-release:
+    name: Create Desktop Release
+    needs: dockerize
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.create-release.outputs.id }}
+      release-tag: ${{ steps.create-release.outputs.tag_name }}
+      release-upload-url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./desktop-app/package.json').version")
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG="v${VERSION}-${TIMESTAMP}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Create Desktop App Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get-version.outputs.tag }}
+          release_name: kNotes Desktop v${{ steps.get-version.outputs.version }}
+          body: |
+            ## 🚀 kNotes Release - Docker + Desktop Apps
+
+            This release includes both the deployed web application and desktop apps for all platforms.
+
+            ### 🐳 Docker Deployment:
+            - **Image**: `lhamacorp/knotes:latest`
+            - **Platforms**: linux/amd64, linux/arm64
+            - **Deployed to**: https://notes.lhamacorp.com
+
+            ### 📱 Desktop Apps:
+            - **Windows**: Download the `.exe` installer
+            - **macOS**: Download the `.dmg` installer
+            - **Linux**: Download the `.AppImage` file
+
+            ### ✨ What's New:
+            - Latest frontend updates from the web application
+            - Automatic synchronization with deployed API
+            - Bug fixes and improvements
+            - Auto-update functionality for desktop apps
+
+            ### 📦 Installation:
+            1. Download the appropriate desktop app for your operating system
+            2. Install/run the application
+            3. The app connects to the deployed API and will check for future updates automatically
+
+            **Built from commit**: ${{ github.sha }}
+            **Docker image**: `docker pull lhamacorp/knotes:latest`
+          draft: false
+          prerelease: false
+
+  build-linux-desktop:
+    name: Build Linux Desktop
+    needs: create-desktop-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          cp -r src/main/resources/static/* desktop-app/
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build and publish Linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-linux
+
+  build-windows-desktop:
+    name: Build Windows Desktop
+    needs: create-desktop-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          xcopy "src\main\resources\static\*" "desktop-app\" /E /I /Y
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build and publish Windows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-win
+
+  build-macos-desktop:
+    name: Build macOS Desktop
+    needs: create-desktop-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          cp -r src/main/resources/static/* desktop-app/
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build and publish macOS
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-mac

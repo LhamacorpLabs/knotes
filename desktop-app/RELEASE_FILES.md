@@ -1,6 +1,6 @@
 # 📦 GitHub Release Files
 
-When the workflow runs, it creates a GitHub Release with these files:
+When the **unified workflow** runs (after Docker deployment), it creates a GitHub Release with these files:
 
 ## 🐧 Linux Files
 ```

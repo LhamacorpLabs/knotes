@@ -10,11 +10,12 @@ Your kNotes desktop app now has **full automatic update capabilities**! Here's w
 - ✅ Added "Check for Updates" menu item
 - ✅ User-friendly update notifications and dialogs
 
-### 2. **GitHub Actions Workflow**
-- ✅ Created `.github/workflows/desktop-release.yml`
-- ✅ Automatically triggers on frontend changes (`src/main/resources/static/**`)
-- ✅ Builds for all platforms: Windows, macOS, and Linux
-- ✅ Publishes to GitHub Releases automatically
+### 2. **Unified GitHub Actions Workflow**
+- ✅ Updated `.github/workflows/buildAndRelease.yml` to include desktop builds
+- ✅ Automatically triggers on ANY push to main branch
+- ✅ **First**: Deploys Docker image to production
+- ✅ **Then**: Builds desktop apps for Windows, macOS, and Linux
+- ✅ **Finally**: Creates single GitHub Release with everything
 
 ### 3. **Configuration Files**
 - ✅ Updated `package.json` with publish settings
