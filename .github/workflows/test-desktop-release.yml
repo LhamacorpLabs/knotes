@@ -1,0 +1,142 @@
+name: Test Desktop Release (Manual)
+
+on:
+  workflow_dispatch:  # Manual trigger for testing
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  create-test-release:
+    name: Create Test Release
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag: ${{ steps.get-version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version for test
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./desktop-app/package.json').version")
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG="test-v${VERSION}-${TIMESTAMP}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Create Test Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get-version.outputs.tag }}
+          release_name: 🧪 Test Release - kNotes Desktop v1.1.0
+          body: |
+            ## 🧪 Test Release - Desktop App Cross-Platform Build
+
+            This is a **test release** to verify the cross-platform build system works correctly.
+
+            ### What gets built:
+            - 🐧 **Linux**: `.AppImage` file (portable, runs on any Linux distro)
+            - 🪟 **Windows**: `.exe` installer (NSIS-based installer)
+            - 🍎 **macOS**: `.dmg` installer (drag-and-drop installer)
+
+            ### Test Status:
+            - ✅ GitHub Actions workflow
+            - ✅ electron-builder configuration
+            - ✅ Cross-platform publishing
+            - ✅ Auto-updater integration
+
+            **Built from**: ${{ github.sha }}
+            **Timestamp**: ${{ steps.get-version.outputs.tag }}
+          draft: false
+          prerelease: true
+
+  test-linux:
+    name: Test Linux Build
+    needs: create-test-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          cp -r src/main/resources/static/* desktop-app/
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build Linux (test)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-linux
+
+  test-windows:
+    name: Test Windows Build
+    needs: create-test-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          xcopy "src\main\resources\static\*" "desktop-app\" /E /I /Y
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build Windows (test)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-win
+
+  test-macos:
+    name: Test macOS Build
+    needs: create-test-release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop-app/package-lock.json
+
+      - name: Copy frontend files
+        run: |
+          cp -r src/main/resources/static/* desktop-app/
+
+      - name: Install dependencies
+        run: |
+          cd desktop-app
+          npm ci
+
+      - name: Build macOS (test)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd desktop-app
+          npm run publish-mac

@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 // Keep a global reference of the window object
@@ -61,6 +62,13 @@ function createMenu() {
           accelerator: 'CmdOrCtrl+H',
           click: () => {
             mainWindow.loadFile(path.join(__dirname, 'home.html'));
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates',
+          click: () => {
+            autoUpdater.checkForUpdatesAndNotify();
           }
         },
         { type: 'separator' },
@@ -139,9 +147,68 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+// Auto-updater configuration
+function setupAutoUpdater() {
+  // Configure auto-updater
+  autoUpdater.checkForUpdatesAndNotify();
+
+  // Auto-updater events
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for update...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info);
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: 'A new version is available. It will be downloaded in the background.',
+      detail: `Version ${info.version} is now available. The update will be downloaded and installed automatically.`,
+      buttons: ['OK']
+    });
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('Update not available:', info);
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Error in auto-updater:', err);
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    console.log(log_message);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded:', info);
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: 'Update downloaded and ready to install',
+      detail: 'The application will restart to apply the update.',
+      buttons: ['Restart Now', 'Later']
+    }).then((result) => {
+      if (result.response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+}
+
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
+
+  // Set up auto-updater after window is created
+  setTimeout(() => {
+    setupAutoUpdater();
+  }, 3000); // Wait 3 seconds after app start
 
   app.on('activate', () => {
     // On macOS, re-create a window when the dock icon is clicked

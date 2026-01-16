@@ -69,6 +69,7 @@ Built applications will be available in the `dist/` directory:
 - 📱 Responsive interface
 - 💾 Auto-save functionality
 - 🔄 Real-time conflict detection
+- 🔄 **Automatic Updates** - App updates automatically when frontend changes
 
 ## Architecture
 
@@ -78,6 +79,26 @@ The desktop app is built with:
 - **Native HTML/CSS** - Clean, fast interface
 
 The app acts as a desktop wrapper around your existing frontend, making HTTP requests to your deployed API at `https://notes.lhamacorp.com/api/notes`.
+
+## Automatic Updates
+
+The desktop app includes automatic update functionality:
+
+### How It Works
+1. **Frontend Changes Detected** - When you push changes to the main branch that affect `src/main/resources/static/`, GitHub Actions automatically builds new desktop app versions
+2. **GitHub Releases Created** - New versions are published to GitHub Releases with cross-platform binaries
+3. **Automatic Notifications** - Desktop app checks for updates every time it starts and notifies users when updates are available
+4. **Background Downloads** - Updates download automatically in the background
+5. **One-Click Installation** - Users can restart to apply updates with a single click
+
+### Manual Update Check
+Users can also manually check for updates via: **File Menu → Check for Updates**
+
+### Update Process
+- ✅ Non-disruptive background downloads
+- ✅ User chooses when to restart and apply updates
+- ✅ Automatic rollback protection
+- ✅ Secure signature verification
 
 ## Development Notes
 
