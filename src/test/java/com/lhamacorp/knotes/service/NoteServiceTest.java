@@ -6,6 +6,7 @@ import com.lhamacorp.knotes.context.UserContextHolder;
 import com.lhamacorp.knotes.domain.EncryptionMode;
 import com.lhamacorp.knotes.domain.Note;
 import com.lhamacorp.knotes.exception.BadRequestException;
+import com.lhamacorp.knotes.exception.UnauthorizedException;
 import com.lhamacorp.knotes.repository.NoteRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -317,5 +318,83 @@ class NoteServiceTest {
         // Then
         assertEquals(emptyList(), result);
         verify(repository).findAllByCreatedBy(testUserId);
+    }
+
+    @Test
+    void updateDisplay_asOwner_shouldSetColorAndPinnedWithoutTouchingContentOrModifiedAt() {
+        when(repository.findById(testId)).thenReturn(Optional.of(testNote));
+        when(repository.save(any(Note.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Note result = noteService.updateDisplay(testId, "#FEFF9C", true);
+
+        assertEquals("#feff9c", result.color());
+        assertTrue(result.pinned());
+        assertEquals(testContent, result.content());
+        assertEquals(testModifiedAt, result.modifiedAt());
+    }
+
+    @Test
+    void updateDisplay_withEmptyColor_shouldClearColor() {
+        Note colored = testNote.withDisplay("#feff9c", false);
+        when(repository.findById(testId)).thenReturn(Optional.of(colored));
+        when(repository.save(any(Note.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Note result = noteService.updateDisplay(testId, "", null);
+
+        assertNull(result.color());
+        assertFalse(result.pinned());
+    }
+
+    @Test
+    void updateDisplay_withInvalidColor_shouldThrowBadRequest() {
+        when(repository.findById(testId)).thenReturn(Optional.of(testNote));
+
+        assertThrows(BadRequestException.class, () -> noteService.updateDisplay(testId, "red", null));
+        verify(repository, never()).save(any(Note.class));
+    }
+
+    @Test
+    void updateDisplay_asNonOwner_shouldThrowUnauthorized() {
+        when(repository.findById(testId)).thenReturn(Optional.of(testNote));
+        UserContextHolder.set(new UserContext("someone-else", "other", List.of("USER")));
+
+        assertThrows(UnauthorizedException.class, () -> noteService.updateDisplay(testId, "#feff9c", null));
+        verify(repository, never()).save(any(Note.class));
+    }
+
+    @Test
+    void updateDisplay_asAnonymous_shouldThrowUnauthorized() {
+        when(repository.findById(testId)).thenReturn(Optional.of(testNote));
+        UserContextHolder.set(new UserContext("1", "anonymous", List.of()));
+
+        assertThrows(UnauthorizedException.class, () -> noteService.updateDisplay(testId, null, true));
+    }
+
+    @Test
+    void update_shouldKeepExistingColorAndPinned() {
+        Note colored = testNote.withDisplay("#98fb98", true);
+        when(repository.findById(testId)).thenReturn(Optional.of(colored));
+        when(repository.save(any(Note.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Note result = noteService.update(testId, "new body", null, null);
+
+        assertEquals("#98fb98", result.color());
+        assertTrue(result.pinned());
+        assertEquals("new body", result.content());
+    }
+
+    @Test
+    void findAllNotes_withAuthenticatedUser_shouldReturnFullNotes() {
+        when(repository.findAllByCreatedBy(testUserId)).thenReturn(List.of(testNote));
+
+        assertEquals(List.of(testNote), noteService.findAllNotes());
+    }
+
+    @Test
+    void findAllNotes_withAnonymousUser_shouldReturnEmptyList() {
+        UserContextHolder.set(new UserContext("1", "anonymous", List.of()));
+
+        assertEquals(emptyList(), noteService.findAllNotes());
+        verify(repository, never()).findAllByCreatedBy(anyString());
     }
 }

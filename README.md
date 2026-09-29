@@ -34,6 +34,10 @@ A modern, efficient note-taking application with automatic compression, dark mod
 | `GET` | `/api/notes/{id}` | Retrieve a note by ID |
 | `POST` | `/api/notes` | Create a new note |
 | `PUT` | `/api/notes` | Update an existing note |
+| `GET` | `/api/notes?expand=true` | All of the current user's notes with content, newest first (one call for card views) |
+| `PUT` | `/api/notes/{id}` | Update content/visibility, or send only `color` / `pinned` to change display without touching content |
+
+Notes now carry `color` (hex like `#feff9c`, empty string clears) and `pinned` (boolean). Only the owner can change them.
 
 ### Request/Response Examples
 

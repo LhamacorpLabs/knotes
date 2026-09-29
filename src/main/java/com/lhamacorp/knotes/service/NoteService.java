@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.github.f4b6a3.ulid.UlidCreator.getUlid;
 import static com.lhamacorp.knotes.api.dto.NoteMetadata.from;
@@ -26,6 +27,8 @@ import static java.util.Collections.emptyList;
 
 @Service
 public class NoteService {
+
+    private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
 
     private final NoteRepository repository;
 
@@ -89,7 +92,37 @@ public class NoteService {
             encryptionMode = existingNote.encryptionMode();
         }
 
-        return repository.save(new Note(id, content, existingNote.createdBy(), existingNote.createdAt(), now(), encryptionMode, password));
+        Note updated = new Note(id, content, existingNote.createdBy(), existingNote.createdAt(), now(), encryptionMode, password)
+                .withDisplayFrom(existingNote);
+        return repository.save(updated);
+    }
+
+    @CacheEvict(value = {"content", "metadata"}, key = "#id")
+    public Note updateDisplay(String id, String color, Boolean pinned) {
+        Note existing = repository.findById(id).orElseThrow(() -> new BadRequestException(NOT_FOUND));
+        UserContext user = UserContextHolder.get();
+
+        if (ANONYMOUS.equals(user.id()) || !user.id().equals(existing.createdBy())) {
+            throw new UnauthorizedException("Only the owner can change color or pin");
+        }
+
+        String newColor = existing.color();
+        if (color != null) {
+            if (!color.isEmpty() && !HEX_COLOR.matcher(color).matches()) {
+                throw new BadRequestException("Color must be a hex value like #feff9c");
+            }
+            newColor = color.isEmpty() ? null : color.toLowerCase();
+        }
+        Boolean newPinned = pinned != null ? pinned : existing.pinned();
+
+        return repository.save(existing.withDisplay(newColor, newPinned));
+    }
+
+    public List<Note> findAllNotes() {
+        UserContext user = UserContextHolder.get();
+        return ANONYMOUS.equals(user.id())
+                ? emptyList()
+                : repository.findAllByCreatedBy(user.id());
     }
 
     @CacheEvict(value = {"content", "metadata"}, key = "#id")

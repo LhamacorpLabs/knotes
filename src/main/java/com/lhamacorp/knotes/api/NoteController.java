@@ -12,6 +12,7 @@ import com.lhamacorp.knotes.service.NoteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 
 import static com.lhamacorp.knotes.context.UserContextHolder.isAuthenticated;
@@ -37,6 +38,20 @@ public class NoteController {
     @GetMapping
     public ResponseEntity<List<String>> findByUserId() {
         return ok(noteService.findAll());
+    }
+
+    /**
+     * Full notes for the current user in one call (newest first), for card/list views.
+     * Undecryptable notes come back with null content instead of failing the whole list.
+     */
+    @GetMapping(params = "expand=true")
+    public ResponseEntity<List<NoteResponse>> findAllExpanded() {
+        String userId = UserContextHolder.get().id();
+        List<NoteResponse> notes = noteService.findAllNotes().stream()
+                .sorted(Comparator.comparing(Note::modifiedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(note -> NoteResponse.summary(note, userId))
+                .toList();
+        return ok(notes);
     }
 
     @GetMapping("/{id}")
