@@ -12,7 +12,9 @@ public record NoteResponse(
         Instant createdAt,
         Instant modifiedAt,
         EncryptionMode encryptionMode,
-        Boolean requiresPassword
+        Boolean requiresPassword,
+        String color,
+        Boolean pinned
 ) {
 
     public static NoteResponse from(Note note) {
@@ -23,7 +25,9 @@ public record NoteResponse(
                 note.createdAt(),
                 note.modifiedAt(),
                 note.encryptionMode() != null ? note.encryptionMode() : EncryptionMode.PUBLIC,
-                note.requiresPassword() != null ? note.requiresPassword() : false
+                note.requiresPassword() != null ? note.requiresPassword() : false,
+                note.color(),
+                Boolean.TRUE.equals(note.pinned())
         );
     }
 
@@ -35,7 +39,9 @@ public record NoteResponse(
                 note.createdAt(),
                 note.modifiedAt(),
                 note.encryptionMode() != null ? note.encryptionMode() : EncryptionMode.PUBLIC,
-                note.requiresPassword() != null ? note.requiresPassword() : false
+                note.requiresPassword() != null ? note.requiresPassword() : false,
+                note.color(),
+                Boolean.TRUE.equals(note.pinned())
         );
     }
 
@@ -47,7 +53,9 @@ public record NoteResponse(
                 note.createdAt(),
                 note.modifiedAt(),
                 note.encryptionMode() != null ? note.encryptionMode() : EncryptionMode.PUBLIC,
-                note.requiresPassword() != null ? note.requiresPassword() : false
+                note.requiresPassword() != null ? note.requiresPassword() : false,
+                note.color(),
+                Boolean.TRUE.equals(note.pinned())
         );
     }
 
@@ -59,7 +67,32 @@ public record NoteResponse(
                 note.createdAt(),
                 note.modifiedAt(),
                 note.encryptionMode() != null ? note.encryptionMode() : EncryptionMode.PUBLIC,
-                note.requiresPassword() != null ? note.requiresPassword() : false
+                note.requiresPassword() != null ? note.requiresPassword() : false,
+                note.color(),
+                Boolean.TRUE.equals(note.pinned())
+        );
+    }
+
+    /**
+     * Response for list views: never throws on undecryptable notes; content is null instead.
+     */
+    public static NoteResponse summary(Note note, String requestingUserId) {
+        String content;
+        try {
+            content = note.content(requestingUserId, null);
+        } catch (RuntimeException e) {
+            content = null;
+        }
+        return new NoteResponse(
+                note.id(),
+                content,
+                note.createdBy(),
+                note.createdAt(),
+                note.modifiedAt(),
+                note.encryptionMode() != null ? note.encryptionMode() : EncryptionMode.PUBLIC,
+                note.requiresPassword() != null ? note.requiresPassword() : false,
+                note.color(),
+                Boolean.TRUE.equals(note.pinned())
         );
     }
 }

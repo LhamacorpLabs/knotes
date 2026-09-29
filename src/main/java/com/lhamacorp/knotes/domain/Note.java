@@ -22,10 +22,17 @@ public record Note(
         Instant modifiedAt,
         EncryptionMode encryptionMode,
         @Field("salt") Binary encryptionSalt,
-        Boolean requiresPassword
+        Boolean requiresPassword,
+        String color,
+        Boolean pinned
 ) {
 
     public static final String ANONYMOUS = "1";
+
+    public Note(String id, Binary compressedData, String createdBy, Instant createdAt, Instant modifiedAt,
+                EncryptionMode encryptionMode, Binary encryptionSalt, Boolean requiresPassword) {
+        this(id, compressedData, createdBy, createdAt, modifiedAt, encryptionMode, encryptionSalt, requiresPassword, null, null);
+    }
 
     public Note(String id, String content, String createdBy, Instant createdAt, Instant modifiedAt) {
         this(id, content, createdBy, createdAt, modifiedAt, PUBLIC, null);
@@ -46,7 +53,20 @@ public record Note(
         Binary processedContent = processContent(content, mode, createdBy, password, salt);
         Binary storedSalt = salt != null ? new Binary(salt) : null;
 
-        this(id, processedContent, createdBy, createdAt, modifiedAt, mode, storedSalt, mode == EncryptionMode.PASSWORD_SHARED);
+        this(id, processedContent, createdBy, createdAt, modifiedAt, mode, storedSalt, mode == EncryptionMode.PASSWORD_SHARED, null, null);
+    }
+
+    /**
+     * Returns a copy with new display metadata. Content, encryption and timestamps are untouched,
+     * so changing a color or pin does not count as a content edit.
+     */
+    public Note withDisplay(String color, Boolean pinned) {
+        return new Note(id, compressedData, createdBy, createdAt, modifiedAt, encryptionMode,
+                encryptionSalt, requiresPassword, color, pinned);
+    }
+
+    public Note withDisplayFrom(Note other) {
+        return withDisplay(other.color(), other.pinned());
     }
 
     public String content() {
