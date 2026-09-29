@@ -84,6 +84,18 @@ public class NoteController {
         UserContext user = UserContextHolder.get();
         String userId = user.id();
 
+        // Older clients send color/pin as a body without content. Treat that as a display-only update,
+        // never as "set content to nothing".
+        if (isDisplayOnly(request)) {
+            return displayResponse(noteService.updateDisplay(id, request.color(), request.pinned()), userId, password);
+        }
+
+        // A content update must carry content: refusing here means a malformed or partial body can
+        // never blank a note.
+        if (request.content() == null) {
+            return badRequest().build();
+        }
+
         if (ANONYMOUS.equals(userId) && request.encryptionMode() != null
                 && !request.encryptionMode().equals("PUBLIC")) {
             return badRequest().build();
@@ -99,12 +111,35 @@ public class NoteController {
         }
 
         Note updatedNote = noteService.update(id, request.content(), mode, password);
-        EncryptionMode finalMode = updatedNote.encryptionMode() != null ? updatedNote.encryptionMode() : PUBLIC;
+        return displayResponse(updatedNote, userId, password);
+    }
 
-        return switch (finalMode) {
-            case PRIVATE -> ok().body(NoteResponse.fromPrivate(updatedNote, userId));
-            case PASSWORD_SHARED -> ok().body(NoteResponse.fromPasswordShared(updatedNote, password));
-            case PUBLIC -> ok().body(NoteResponse.from(updatedNote));
+    /**
+     * Changes only color and/or pin. Content, encryption and modifiedAt are left alone. Owner only.
+     */
+    @PutMapping("{id}/display")
+    public ResponseEntity<NoteResponse> updateDisplay(@PathVariable String id,
+                                                      @RequestBody NoteUpdateRequest request,
+                                                      @RequestParam(required = false) String password) {
+        if (request.color() == null && request.pinned() == null) {
+            return badRequest().build();
+        }
+        Note updated = noteService.updateDisplay(id, request.color(), request.pinned());
+        return displayResponse(updated, UserContextHolder.get().id(), password);
+    }
+
+    private static boolean isDisplayOnly(NoteUpdateRequest request) {
+        return request.content() == null
+                && (request.encryptionMode() == null || request.encryptionMode().isEmpty())
+                && (request.color() != null || request.pinned() != null);
+    }
+
+    private ResponseEntity<NoteResponse> displayResponse(Note note, String userId, String password) {
+        EncryptionMode mode = note.encryptionMode() != null ? note.encryptionMode() : PUBLIC;
+        return switch (mode) {
+            case PRIVATE -> ok().body(NoteResponse.fromPrivate(note, userId));
+            case PASSWORD_SHARED -> ok().body(NoteResponse.fromPasswordShared(note, password));
+            case PUBLIC -> ok().body(NoteResponse.from(note));
         };
     }
 
