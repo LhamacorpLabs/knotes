@@ -1,13 +1,18 @@
 server:
   port: ${port:8080}
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 2
 
-spring:
-  mongodb:
-    database: ${database:knotes}
-    uri: ${mongo:mongodb://localhost:27017}
-
-auth:
-  api: ${auth_api:}
+clients:
+  secrets:
+    url: ${secrets_url:http://secrets-be.internal}
+    key: ${iam_key}
+    secret: ${iam_secret}
+  api:
+    auth:
+      url: ${auth_api:}
 
 encryption:
   key: ${encryption_key:}

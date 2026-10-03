@@ -1,52 +1,63 @@
 package com.lhamacorp.knotes.client;
 
+import com.lhamacorp.knotes.context.UserContext;
 import com.lhamacorp.knotes.exception.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
-import java.util.List;
-import java.util.Map;
-
-import static org.springframework.http.HttpMethod.GET;
+import java.util.Objects;
 
 @Component
 public class AuthClient {
 
-    private final RestTemplate rest;
+    private final RestClient rest;
     private final String baseUrl;
+    private final String key;
+    private final String secret;
 
-    public AuthClient(RestTemplate rest, @Value("${auth.api}") String baseUrl) {
+    public AuthClient(RestClient rest,
+                      @Value("${clients.api.auth.url}") String baseUrl,
+                      @Value("${clients.secrets.key}") String key,
+                      @Value("${clients.secrets.secret}") String secret) {
         this.rest = rest;
         this.baseUrl = baseUrl;
+        this.key = key;
+        this.secret = secret;
     }
 
-    @Cacheable(value = "current", key = "#token")
-    public CurrentUser current(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", token);
-
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(null, headers);
-
+    public String authenticate() {
         try {
-            ResponseEntity<CurrentUser> response = rest.exchange(baseUrl + "/users/current", GET, entity, CurrentUser.class);
-
-            if (response.getStatusCode() == HttpStatus.OK) {
-                return response.getBody();
-            } else {
-                throw new UnauthorizedException("Unexpected response status: " + response.getStatusCode());
-            }
-        } catch (HttpClientErrorException e) {
+            return Objects.requireNonNull(rest.post()
+                            .uri(baseUrl + "/authenticate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(new AuthRequest(key, secret))
+                            .retrieve()
+                            .body(AuthResponse.class))
+                    .token();
+        } catch (RestClientResponseException e) {
             throw new UnauthorizedException("Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
         } catch (Exception e) {
             throw new UnauthorizedException("An error occurred: " + e.getMessage());
         }
     }
 
-    public record CurrentUser(String id, String username, List<String> roles) {
+    @Cacheable(value = "current", key = "#token")
+    public UserContext current(String token) {
+        try {
+            return rest.get()
+                    .uri(baseUrl + "/users/current")
+                    .header("Authorization", token)
+                    .retrieve()
+                    .body(UserContext.class);
+        } catch (RestClientResponseException e) {
+            throw new UnauthorizedException("Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            throw new UnauthorizedException("An error occurred: " + e.getMessage());
+        }
     }
 
 }
